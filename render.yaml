@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: orbit-orchestrator
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: DATABASE_PATH
+        value: /app/data/orchestrator.sqlite
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_BUCKET
+        sync: false

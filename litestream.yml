@@ -1,0 +1,7 @@
+dbs:
+  - path: /app/data/orchestrator.sqlite
+    replicas:
+      - type: s3
+        bucket: "${S3_BUCKET}"
+        path: db
+        region: "${AWS_REGION}"

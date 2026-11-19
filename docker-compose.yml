@@ -1,0 +1,15 @@
+services:
+  orchestrator:
+    build: .
+    container_name: orbit-orchestrator
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_PATH=/app/data/orchestrator.sqlite
+    volumes:
+      - orchestrator-data:/app/data
+
+volumes:
+  orchestrator-data:
