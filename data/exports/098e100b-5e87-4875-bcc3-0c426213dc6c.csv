@@ -1,0 +1,21 @@
+customer_id,name,email,amount,region
+CUST001,Aarav Sharma,aarav.sharma@example.com,2499.00,NORTH
+CUST002,Diya Patel,diya.patel@example.com,1299.50,WEST
+CUST003,Rohan Nair,rohan.nair@example.com,549.00,SOUTH
+CUST004,Ananya Singh,ananya.singh@example.com,3299.00,EAST
+CUST005,Ishaan Mehta,ishaan.mehta@example.com,899.00,WEST
+CUST006,Meera Iyer,meera.iyer@example.com,1750.00,SOUTH
+CUST007,Kabir Das,kabir.das@example.com,4200.00,EAST
+CUST008,Sara Khan,sara.khan@example.com,749.00,NORTH
+CUST009,Arjun Menon,arjun.menon@example.com,2150.00,SOUTH
+CUST010,Kiara Joshi,kiara.joshi@example.com,999.00,WEST
+CUST011,Vivaan Gupta,vivaan.gupta@example.com,5600.00,NORTH
+CUST012,Aditi Rao,aditi.rao@example.com,1450.00,SOUTH
+CUST013,Reyansh Bose,reyansh.bose@example.com,3100.00,EAST
+CUST014,Tara Kulkarni,tara.kulkarni@example.com,675.00,WEST
+CUST015,Neil Thomas,neil.thomas@example.com,2899.00,SOUTH
+CUST016,Myra Kapoor,myra.kapoor@example.com,1199.00,NORTH
+CUST017,Advik Reddy,advik.reddy@example.com,3999.00,SOUTH
+CUST018,Ira Chatterjee,ira.chatterjee@example.com,850.00,EAST
+CUST019,Dhruv Shah,dhruv.shah@example.com,2250.00,WEST
+CUST020,Saanvi Pillai,saanvi.pillai@example.com,1600.00,SOUTH

@@ -1,0 +1,7 @@
+customer_id,name,email,amount,region
+1001,Alice Ng,alice@example.com,125.50,WEST
+1002,Bob Patel,bob@example.com,80.00,EAST
+1003,Unknown,charlie@example.com,42.25,NORTH
+1004,Dana Lee,unknown@example.com,19.99,SOUTH
+1005,Evan Kim,evan@example.com,0.00,WEST
+1006,Fatima Noor,fatima@example.com,210.00,CENTRAL
