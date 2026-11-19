@@ -100,6 +100,37 @@ function MasterDag({ tasks = [], onNode, selectedTaskId, large = false }) {
   </div>;
 }
 
+function PipelineDag({ nodes = [], tasks = [], onNode, selectedTaskId }) {
+  const taskMap = new Map(tasks.map((task) => [task.taskId, task]));
+  const height = Math.max(220, nodes.length * 88);
+  const positions = new Map(nodes.map((node, index) => [node.id, { x: 350, y: 30 + index * 88 }]));
+  return <div className="pipeline-dag" style={{ height }}>
+    <svg className="dag-svg" viewBox={`0 0 700 ${height}`} preserveAspectRatio="xMidYMin meet">
+      {nodes.flatMap((node) => (node.dependencies ?? []).map((dependency) => {
+        const from = positions.get(dependency);
+        const to = positions.get(node.id);
+        const complete = ["SUCCESS", "FAILED", "TIMED_OUT", "SKIPPED"].includes(taskMap.get(dependency)?.status);
+        return <line key={`${dependency}-${node.id}`} x1={from.x} y1={from.y + 38} x2={to.x} y2={to.y}
+          className={`dag-edge ${complete ? "dag-edge-active" : ""}`} />;
+      }))}
+    </svg>
+    {nodes.map((node) => {
+      const position = positions.get(node.id);
+      const task = taskMap.get(node.id);
+      const status = task?.status ?? "PENDING";
+      return <button key={node.id}
+        className={`dag-node dag-${statusClass(status)} ${selectedTaskId === node.id ? "dag-node-selected" : ""}`}
+        style={{ left: "calc(50% - 82px)", top: position.y }}
+        onClick={() => onNode(node.id)}>
+        <span className="dag-node-status"><i />{status}</span>
+        <b>{node.name}</b>
+        <small>Attempt {task?.attempts ?? 0} · {formatDuration(task?.durationMs)}</small>
+        {task?.error && <span className="dag-error">!</span>}
+      </button>;
+    })}
+  </div>;
+}
+
 export default function App() {
   const [section, setSection] = useState("simulator");
   const [apiStatus, setApiStatus] = useState("checking");
@@ -181,6 +212,7 @@ export default function App() {
   const selectedScenario = ALL_SCENARIOS.find(([, label]) => label) && ALL_SCENARIOS.find(([id]) => id === scenario);
   const selectedTask = detail?.tasks?.find((task) => task.taskId === selectedTaskId);
   const taskAttempts = attempts.filter((attempt) => attempt.taskId === selectedTaskId);
+  const detailTemplate = templates.find((template) => detail?.workflowId?.startsWith(`${template.id}:`));
   const run = async () => {
     setBusy(true); setError("");
     try {
@@ -213,9 +245,10 @@ export default function App() {
   const replay = async (executionId = selectedExecutionId) => {
     if (!executionId) return;
     try {
+      const original = executions.find((execution) => execution.id === executionId);
       const result = await api.post(`/api/executions/${encodeURIComponent(executionId)}/replay`);
       setSelectedExecutionId(result.executionId);
-      setSection("simulator");
+      setSection(original?.workflowId?.startsWith("resilience-recovery:") ? "simulator" : "workflow-run");
       setToast("Replay execution started");
     } catch (cause) {
       setError(cause.message);
@@ -243,7 +276,9 @@ export default function App() {
     </aside>
     <main className="main-area">
       <header className="topbar">
-        <div className="breadcrumb"><span>Orchestrator</span><ChevronRight size={14} /><strong>{nav.find(([id]) => id === section)?.[1] ?? "Templates"}</strong></div>
+        <div className="breadcrumb"><span>Orchestrator</span><ChevronRight size={14} /><strong>
+          {section === "workflow-run" ? "Pipeline Run" : nav.find(([id]) => id === section)?.[1] ?? "Templates"}
+        </strong></div>
         <div className="topbar-actions"><span className="topbar-clock"><i className="live-dot" />Live updates</span><button className="icon-button" onClick={() => refresh().catch((cause) => setError(cause.message))} aria-label="Refresh"><RefreshCw size={17} /></button></div>
       </header>
       <div className="page-content">
@@ -255,14 +290,22 @@ export default function App() {
           logFilter={logFilter} setLogFilter={setLogFilter} run={run} cancel={cancel} reset={reset}
           replay={() => replay()} busy={busy}
         />}
+        {section === "workflow-run" && <PipelineRun
+          template={detailTemplate} detail={detail} logs={logs} selectedTask={selectedTask}
+          selectedTaskId={selectedTaskId} setSelectedTaskId={setSelectedTaskId}
+          attempts={taskAttempts}
+        />}
         {section === "history" && <HistoryPage executions={executions} filter={historyFilter} setFilter={setHistoryFilter}
-          open={(execution) => { setSelectedExecutionId(execution.id); setSection("simulator"); }}
+          open={(execution) => {
+            setSelectedExecutionId(execution.id);
+            setSection(execution.workflowId.startsWith("resilience-recovery:") ? "simulator" : "workflow-run");
+          }}
           replay={replay} />}
         {section === "analytics" && <AnalyticsPage stats={stats} executions={executions} />}
         {section === "dashboard" && <DashboardPage stats={stats} executions={executions} setSection={setSection} />}
         {section === "templates" && <TemplatesPage templates={templates} csvInput={csvInput} setCsvInput={setCsvInput}
           textInput={textInput} setTextInput={setTextInput} setError={setError} refresh={refresh}
-          setSelectedExecutionId={setSelectedExecutionId} setSection={setSection} />}
+          setSelectedExecutionId={setSelectedExecutionId} setSection={setSection} setSelectedTaskId={setSelectedTaskId} />}
       </div>
     </main>
     {toast && <div className="toast"><Check size={16} />{toast}</div>}
@@ -355,6 +398,58 @@ function Simulator({ scenario, setScenario, targetTask, setTargetTask, config, s
   </section>;
 }
 
+function PipelineRun({ template, detail, logs, selectedTask, selectedTaskId, setSelectedTaskId, attempts }) {
+  if (!detail) return <section className="panel monitor-empty"><LoaderCircle className="spin" size={22}/><h2>Loading pipeline run</h2></section>;
+  const taskName = template?.name ?? detail.workflowName;
+  return <section className="page-stack">
+    <div className="page-heading">
+      <div>
+        <div className="eyebrow"><Activity size={13}/> LIVE PIPELINE EXECUTION</div>
+        <h1>{taskName}</h1>
+        <p>Watch task progression and inspect outputs from this execution.</p>
+      </div>
+      <Status value={detail.status}/>
+    </div>
+    <div className="pipeline-run-layout">
+      <section className="panel pipeline-graph-panel">
+        <div className="panel-heading"><div><h2>Workflow DAG</h2><p>{detail.tasks.filter((task) => task.status === "SUCCESS").length} of {detail.tasks.length} tasks completed</p></div></div>
+        <PipelineDag nodes={template?.nodes ?? []} tasks={detail.tasks}
+          onNode={setSelectedTaskId} selectedTaskId={selectedTaskId}/>
+      </section>
+      <section className="panel pipeline-task-panel">
+        <div className="panel-heading"><div><h2>Task execution</h2><p>Select a task in the DAG to inspect progress.</p></div></div>
+        <div className="pipeline-task-list">{detail.tasks.map((task) => {
+          const definition = template?.nodes?.find((node) => node.id === task.taskId);
+          return <button key={task.taskId} className={`task-run ${selectedTaskId === task.taskId ? "task-run-selected" : ""}`}
+            onClick={() => setSelectedTaskId(task.taskId)}>
+            <span className="task-run-title"><b>{definition?.name ?? task.taskId}</b><Status value={task.status}/></span>
+            <small>{task.attempts} attempt{task.attempts === 1 ? "" : "s"} · {formatDuration(task.durationMs)}</small>
+            {task.error && <span className="task-error">{task.error}</span>}
+          </button>;
+        })}</div>
+        {selectedTask && <div className="pipeline-output">
+          <div className="inspector-status"><b>{selectedTaskId}</b><span>{formatDate(selectedTask.startedAt)}</span></div>
+          <h3>Task output</h3>
+          <pre>{JSON.stringify(selectedTask.output ?? (selectedTask.error ? { error: selectedTask.error } : {}), null, 2)}</pre>
+          <h3>Attempt history</h3>
+          {attempts.length ? attempts.map((attempt) => <div className="pipeline-attempt" key={attempt.attempt}>
+            <b>Attempt {attempt.attempt}</b><Status value={attempt.status}/><span>{formatDuration(attempt.durationMs)}</span>
+            {attempt.error && <small className="task-error">{attempt.error}</small>}
+          </div>) : <p className="muted">No attempts recorded yet.</p>}
+        </div>}
+      </section>
+    </div>
+    <section className="panel pipeline-logs">
+      <div className="panel-heading"><div><h2>Execution process log</h2><p>Live events recorded by the workflow engine</p></div></div>
+      {logs.length ? <ol>{logs.map((log, index) => <li key={`${log.createdAt}-${index}`}>
+        <time>{new Date(log.createdAt).toLocaleTimeString()}</time>
+        <span className={`log-level ${log.level.toLowerCase()}`}>{log.level}</span>
+        <b>{log.taskId ?? "WORKFLOW"}</b><span>{log.message}</span>
+      </li>)}</ol> : <div className="inline-empty">Waiting for execution events.</div>}
+    </section>
+  </section>;
+}
+
 function DashboardPage({ stats, executions, setSection }) {
   const partial = executions.filter((execution) => execution.status === "PARTIAL").length;
   return <section className="page-stack">
@@ -444,7 +539,7 @@ function ChartCard({ title, items }) {
 }
 
 function TemplatesPage({ templates, csvInput, setCsvInput, textInput, setTextInput, setError, refresh,
-  setSelectedExecutionId, setSection }) {
+  setSelectedExecutionId, setSection, setSelectedTaskId }) {
   const runTemplate = async (templateId) => {
     try {
       if (templateId === "text-analysis" && textInput.trim().length === 0) {
@@ -456,7 +551,8 @@ function TemplatesPage({ templates, csvInput, setCsvInput, textInput, setTextInp
       if (templateId === "text-analysis") body.input = { text: textInput };
       const result = await api.post("/api/executions", body);
       setSelectedExecutionId(result.executionId);
-      setSection("history");
+      setSelectedTaskId("");
+      setSection("workflow-run");
       await refresh();
     } catch (cause) {
       setError(cause.message);

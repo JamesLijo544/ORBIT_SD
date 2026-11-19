@@ -255,6 +255,21 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .bar-track { height:9px; border-radius:10px; background:#202630; overflow:hidden; }
 .bar-track i { display:block; height:100%; border-radius:10px; }
 .bar-green { background:var(--green); } .bar-red { background:var(--red); } .bar-orange { background:var(--orange); } .bar-violet { background:var(--purple); } .bar-blue { background:var(--blue); }
+.pipeline-run-layout { display:grid; grid-template-columns:minmax(320px,.9fr) minmax(0,1.1fr); align-items:start; gap:14px; }
+.pipeline-graph-panel { overflow:hidden; }
+.pipeline-dag { position:relative; width:100%; min-height:220px; background:radial-gradient(circle at 50% 45%,#171c25 0,#0b0e12 70%); }
+.pipeline-dag .dag-node { z-index:2; }
+.pipeline-task-panel { min-width:0; }
+.pipeline-task-list { display:grid; gap:7px; }
+.pipeline-output { margin-top:14px; padding-top:12px; border-top:1px solid #252c37; }
+.pipeline-output h3 { margin:12px 0 7px; font-size:11px; }
+.pipeline-output pre { max-height:220px; overflow:auto; padding:11px; border:1px solid #252c37; border-radius:7px; color:#c4cfdd; background:#0a0d11; font:10px/1.5 Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+.pipeline-attempt { display:grid; grid-template-columns:90px 90px 1fr; align-items:center; gap:7px; margin-top:6px; padding:7px; border:1px solid #252c37; border-radius:6px; font-size:9px; }
+.pipeline-attempt small { grid-column:1/-1; }
+.pipeline-logs ol { display:grid; max-height:270px; overflow:auto; margin:0; padding:0; list-style:none; }
+.pipeline-logs li { display:grid; grid-template-columns:90px 42px 110px 1fr; align-items:start; gap:8px; padding:8px 0; border-top:1px solid #202630; color:#c6ccd6; font-size:9px; overflow-wrap:anywhere; }
+.pipeline-logs time { color:var(--muted); }
+.pipeline-logs li b { color:#9faabd; font-size:8px; }
 
 @media (max-width: 1050px) {
   .simulator-layout { grid-template-columns: 190px minmax(380px, 1fr); }
@@ -275,6 +290,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .console-line > span:last-child { grid-column:1/-1; }
   .history-table { overflow-x:auto; }
   .bar-row { grid-template-columns:95px 1fr 30px; }
+  .pipeline-run-layout { grid-template-columns:1fr; }
+  .pipeline-logs li { grid-template-columns:65px 38px 1fr; }
+  .pipeline-logs li > span:last-child { grid-column:1/-1; }
 }
 
 @media (max-width: 1050px) {
